@@ -1,4 +1,5 @@
 import requests
+from tqdm import tqdm
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -31,19 +32,25 @@ def download_video(url, download_path):
     driver.quit()
 
     if video_ref:
-        response = requests.get(video_ref)
-        if response.status_code == 200:
-            with open(download_path, 'wb') as file:
-                file.write(response.content)
-            print("Video downloaded successfully!")
-        else:
-            print("Failed to download video.")
+        response = requests.get(video_ref, stream=True)
+        total_size = int(response.headers.get('Content-Length', 0))
+
+        with open(download_path, 'wb') as file:
+            with tqdm(total=total_size, unit='B', unit_scale=True) as progress_bar:
+                for data in response.iter_content(chunk_size=1024):
+                    file.write(data)
+                    progress_bar.update(len(data))
+
+        print("Video downloaded successfully!")
     else:
         print("Failed to retrieve video download link.")
 
 
 if __name__ == '__main__':
-    # Example usage
-    video_url = "https://www.tiktok.com/@muhammadzahid340/video/6918687903329701121"
-    output_path = "downloads/video.mp4"
+    # sample url 1: "https://www.tiktok.com/@muhammadzahid340/video/6918687903329701121"
+    # sample url 2: "https://www.tiktok.com/@zaryab_tiger/video/7221456453595352325?q=zaryab%20tiger&t=1684527181611"
+    # sample url 3: blah
+
+    video_url = input('url: ')
+    output_path = "downloads/video_3.mp4"
     download_video(video_url, output_path)
